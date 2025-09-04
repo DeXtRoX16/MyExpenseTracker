@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Summary Cards -->
+    <div class="col-md-4 mb-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Today's Spending</h6>
+                        <h3 class="mb-0">${{ "%.2f"|format(total_today) }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-calendar-day fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">This Month</h6>
+                        <h3 class="mb-0">${{ "%.2f"|format(total_month) }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-calendar-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Expenses</h6>
+                        <h3 class="mb-0">{{ expenses|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-receipt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('add_expense') }}" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i>Add New Expense
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('view_expenses') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-list me-2"></i>View All Expenses
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('analytics') }}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-chart-bar me-2"></i>View Analytics
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-success w-100" onclick="exportData()">
+                            <i class="fas fa-download me-2"></i>Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Expenses -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Expenses</h5>
+                <a href="{{ url_for('view_expenses') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if expenses %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in expenses %}
+                                <tr>
+                                    <td>{{ expense.expense_date.strftime('%m/%d/%Y') }}</td>
+                                    <td>
+                                        <strong>{{ expense.title }}</strong>
+                                        {% if expense.description %}
+                                            <br><small class="text-muted">{{ expense.description[:50] }}{% if expense.description|length > 50 %}...{% endif %}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ expense.category_name or 'Uncategorized' }}</span>
+                                    </td>
+                                    <td class="text-success fw-bold">${{ "%.2f"|format(expense.amount) }}</td>
+                                    <td>
+                                        <a href="{{ url_for('delete_expense', expense_id=expense.id) }}" 
+                                        class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Are you sure you want to delete this expense?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No expenses recorded yet</h5>
+                        <p class="text-muted">Start tracking your expenses by adding your first expense!</p>
+                        <a href="{{ url_for('add_expense') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add First Expense
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function exportData() {
+    // Simple CSV export functionality
+    window.open('/expenses?format=csv', '_blank');
+    // Note: You would need to implement the CSV export route in Flask
+    alert('Export functionality would be implemented here');
+}
+</script>
+{% endblock %}

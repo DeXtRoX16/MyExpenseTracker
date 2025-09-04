@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Expense Analytics
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- Chart Navigation -->
+                <ul class="nav nav-tabs" id="chartTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="monthly-tab" data-bs-toggle="tab" 
+                                data-bs-target="#monthly" type="button" role="tab">
+                            <i class="fas fa-chart-line me-1"></i>Monthly Spending
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="category-tab" data-bs-toggle="tab" 
+                                data-bs-target="#category" type="button" role="tab">
+                            <i class="fas fa-chart-pie me-1"></i>Category Breakdown
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="trends-tab" data-bs-toggle="tab" 
+                                data-bs-target="#trends" type="button" role="tab">
+                            <i class="fas fa-chart-area me-1"></i>Spending Trends
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Chart Content -->
+                <div class="tab-content mt-3" id="chartTabsContent">
+                    <!-- Monthly Spending Chart -->
+                    <div class="tab-pane fade show active" id="monthly" role="tabpanel">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <canvas id="monthlyChart" height="300"></canvas>
+                            </div>
+                            <div class="col-lg-4">
+                                <h6>Monthly Summary</h6>
+                                <div id="monthlySummary">
+                                    <!-- Monthly summary will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Category Breakdown Chart -->
+                    <div class="tab-pane fade" id="category" role="tabpanel">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <canvas id="categoryChart" height="400"></canvas>
+                            </div>
+                            <div class="col-lg-6">
+                                <h6>Category Details</h6>
+                                <div id="categoryDetails">
+                                    {% if category_data %}
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Category</th>
+                                                        <th>Count</th>
+                                                        <th>Total</th>
+                                                        <th>%</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% set total_amount = category_data|sum(attribute='total') %}
+                                                    {% for category in category_data %}
+                                                    <tr>
+                                                        <td>{{ category.name }}</td>
+                                                        <td>{{ category.count }}</td>
+                                                        <td>${{ "%.2f"|format(category.total) }}</td>
+                                                        <td>{{ "%.1f"|format((category.total / total_amount * 100) if total_amount > 0 else 0) }}%</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">No data available</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Spending Trends -->
+                    <div class="tab-pane fade" id="trends" role="tabpanel">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Spending trends help you understand your financial patterns over time.
+                                </div>
+                            </div>
+                            <div class="col-lg-8">
+                                <canvas id="trendsChart" height="300"></canvas>
+                            </div>
+                            <div class="col-lg-4">
+                                <h6>Trend Analysis</h6>
+                                <div id="trendAnalysis">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Quick Stats</h6>
+                                            <div class="row text-center">
+                                                <div class="col-6">
+                                                    <div class="border-end">
+                                                        <h5 class="text-primary mb-0" id="avgMonthly">$0</h5>
+                                                        <small class="text-muted">Avg Monthly</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <h5 class="text-success mb-0" id="thisMonth">$0</h5>
+                                                    <small class="text-muted">This Month</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Analytics Cards -->
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card bg-gradient-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Top Category</h6>
+                        <h5 id="topCategory">-</h5>
+                    </div>
+                    <i class="fas fa-trophy fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-gradient-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Avg Per Day</h6>
+                        <h5 id="avgPerDay">$0</h5>
+                    </div>
+                    <i class="fas fa-calendar-day fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-gradient-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Highest Expense</h6>
+                        <h5 id="highestExpense">$0</h5>
+                    </div>
+                    <i class="fas fa-arrow-up fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-gradient-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Total Expenses</h6>
+                        <h5 id="totalExpenses">0</h5>
+                    </div>
+                    <i class="fas fa-receipt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let monthlyChart, categoryChart, trendsChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCharts();
+    calculateStats();
+});
+
+async function loadCharts() {
+    try {
+        // Load monthly data
+        const monthlyResponse = await fetch('/api/monthly_data');
+        const monthlyData = await monthlyResponse.json();
+        
+        // Load category data
+        const categoryResponse = await fetch('/api/category_data');
+        const categoryData = await categoryResponse.json();
+        
+        // Create charts
+        createMonthlyChart(monthlyData);
+        createCategoryChart(categoryData);
+        createTrendsChart(monthlyData);
+        
+        // Update summary
+        updateMonthlySummary(monthlyData);
+        updateStats(categoryData, monthlyData);
+        
+    } catch (error) {
+        console.error('Error loading chart data:', error);
+    }
+}
+
+function createMonthlyChart(data) {
+    const ctx = document.getElementById('monthlyChart').getContext('2d');
+    
+    monthlyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.map(item => item.month),
+            datasets: [{
+                label: 'Monthly Spending',
+                data: data.map(item => item.total),
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(2);
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Total: $' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createCategoryChart(data) {
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    
+    const colors = [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+        '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0'
+    ];
+    
+    categoryChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: data.map(item => item.name),
+            datasets: [{
+                data: data.map(item => item.total),
+                backgroundColor: colors.slice(0, data.length),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = data.reduce((sum, item) => sum + item.total, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return context.label + ': $' + context.parsed.toFixed(2) + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createTrendsChart(data) {
+    const ctx = document.getElementById('trendsChart').getContext('2d');
+    
+    trendsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.map(item => item.month),
+            datasets: [{
+                label: 'Monthly Spending',
+                data: data.map(item => item.total),
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(2);
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Total: $' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateMonthlySummary(data) {
+    const summary = document.getElementById('monthlySummary');
+    let html = '<div class="list-group">';
+    
+    data.slice(-6).forEach(item => {
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <span>${item.month}</span>
+                <span class="badge bg-primary rounded-pill">$${item.total.toFixed(2)}</span>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    summary.innerHTML = html;
+}
+
+function updateStats(categoryData, monthlyData) {
+    // Top category
+    if (categoryData.length > 0) {
+        document.getElementById('topCategory').textContent = categoryData[0].name;
+    }
+    
+    // Average monthly
+    const avgMonthly = monthlyData.length > 0 
+        ? monthlyData.reduce((sum, item) => sum + item.total, 0) / monthlyData.length 
+        : 0;
+    document.getElementById('avgMonthly').textContent = '$' + avgMonthly.toFixed(0);
+    
+    // This month (latest month)
+    const thisMonth = monthlyData.length > 0 ? monthlyData[monthlyData.length - 1].total : 0;
+    document.getElementById('thisMonth').textContent = '$' + thisMonth.toFixed(0);
+    
+    // Calculate additional stats (these would come from backend in real app)
+    const totalAmount = categoryData.reduce((sum, item) => sum + item.total, 0);
+    const totalCount = categoryData.reduce((sum, item) => sum + item.count, 0);
+    
+    document.getElementById('avgPerDay').textContent = '$' + (totalAmount / 30).toFixed(2);
+    document.getElementById('totalExpenses').textContent = totalCount;
+    
+    // Highest expense would need to be calculated from individual expenses
+    document.getElementById('highestExpense').textContent = '$' + (totalAmount > 0 ? (totalAmount / totalCount).toFixed(2) : '0.00');
+}
+
+function calculateStats() {
+    // Additional statistics calculations would go here
+    // This is a placeholder for more complex analytics
+}
+</script>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+}
+.bg-gradient-success {
+    background: linear-gradient(45deg, #28a745, #1e7e34);
+}
+.bg-gradient-warning {
+    background: linear-gradient(45deg, #ffc107, #d39e00);
+}
+.bg-gradient-info {
+    background: linear-gradient(45deg, #17a2b8, #117a8b);
+}
+.opacity-75 {
+    opacity: 0.75;
+}
+</style>
+{% endblock %}

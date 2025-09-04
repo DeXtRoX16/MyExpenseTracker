@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-plus me-2"></i>Add New Expense
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="expenseForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="title" class="form-label">Expense Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" required 
+                                placeholder="e.g., Lunch at Restaurant">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="amount" class="form-label">Amount ($) *</label>
+                            <input type="number" class="form-control" id="amount" name="amount" 
+                                step="0.01" min="0" required placeholder="0.00">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="category_id" class="form-label">Category *</label>
+                            <select class="form-select" id="category_id" name="category_id" required>
+                                <option value="">Select a category</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="expense_date" class="form-label">Date *</label>
+                            <input type="date" class="form-control" id="expense_date" name="expense_date" 
+                                required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                placeholder="Add any additional notes about this expense..."></textarea>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Add Expense
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="reset" class="btn btn-outline-secondary">
+                            <i class="fas fa-undo me-2"></i>Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Quick Add Buttons -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">Quick Add Common Expenses</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-info w-100" onclick="quickAdd('Coffee', 5.00, 'Food & Dining')">
+                            <i class="fas fa-coffee me-1"></i>Coffee ($5)
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-info w-100" onclick="quickAdd('Lunch', 12.00, 'Food & Dining')">
+                            <i class="fas fa-hamburger me-1"></i>Lunch ($12)
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-info w-100" onclick="quickAdd('Gas', 40.00, 'Transportation')">
+                            <i class="fas fa-gas-pump me-1"></i>Gas ($40)
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-outline-info w-100" onclick="quickAdd('Parking', 5.00, 'Transportation')">
+                            <i class="fas fa-parking me-1"></i>Parking ($5)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Set today's date as default
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('expense_date').value = today;
+    
+    // Focus on title field
+    document.getElementById('title').focus();
+});
+
+// Quick add functionality
+function quickAdd(title, amount, categoryName) {
+    document.getElementById('title').value = title;
+    document.getElementById('amount').value = amount.toFixed(2);
+    
+    // Find category by name and select it
+    const categorySelect = document.getElementById('category_id');
+    for (let option of categorySelect.options) {
+        if (option.text === categoryName) {
+            option.selected = true;
+            break;
+        }
+    }
+    
+    // Focus on description field
+    document.getElementById('description').focus();
+}
+
+// Form validation
+document.getElementById('expenseForm').addEventListener('submit', function(e) {
+    const amount = parseFloat(document.getElementById('amount').value);
+    
+    if (amount <= 0) {
+        alert('Please enter a valid amount greater than 0');
+        e.preventDefault();
+        return false;
+    }
+    
+    if (amount > 10000) {
+        if (!confirm('This is a large amount ($' + amount.toFixed(2) + '). Are you sure?')) {
+            e.preventDefault();
+            return false;
+        }
+    }
+});
+
+// Format amount input
+document.getElementById('amount').addEventListener('blur', function() {
+    const value = parseFloat(this.value);
+    if (!isNaN(value)) {
+        this.value = value.toFixed(2);
+    }
+});
+</script>
+{% endblock %}
